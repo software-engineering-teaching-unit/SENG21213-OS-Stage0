@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SENG 21213 — OS Build Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Source+Sans+3:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --white:#ffffff; --off-white:#f8f8f8; --cream:#f5f5f5;
+            --light-gray:#e8e8e6; --medium-gray:#999999; --dark-gray:#4a4a4a;
+            --charcoal:#2a2a2a; --black:#1a1a1a;
+            --accent:#8b7355; --accent-light:#c4b5a0; --accent-pale:#e8dfd4;
+            --accent-warm:#a08060; --success:#5a7a5a; --success-bg:#e8f0e8;
+            --warning-bg:#f5f0e0; --error:#8b5555; --error-bg:#f5eaea;
+            --code-bg:#2a2a2a;
+            --font-serif:'Cormorant Garamond',Georgia,serif;
+            --font-sans:'Source Sans 3',-apple-system,sans-serif;
+            --font-mono:'JetBrains Mono',monospace;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        body{font-family:var(--font-sans);background:var(--off-white);color:var(--charcoal);line-height:1.7;font-weight:300;overflow-x:hidden}
+        ::selection{background:var(--accent-light);color:var(--black)}
+        button{font-family:inherit;cursor:pointer;border:none;background:none}
+        a{color:var(--accent);text-decoration:none;transition:color .3s}
+        a:hover{color:var(--black)}
+
+        /* ── Scroll bar ── */
+        .scroll-bar{position:fixed;top:0;left:0;height:2px;background:var(--accent);z-index:1001;width:0;transition:width .1s}
+
+        /* ── Nav ── */
+        .topnav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(248,248,248,0.96);backdrop-filter:blur(20px);border-bottom:1px solid transparent;transition:all .4s}
+        .topnav.scrolled{border-bottom:1px solid var(--light-gray)}
+        .topnav-inner{max-width:1400px;margin:0 auto;padding:.6rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+        .nav-logo{font-family:var(--font-serif);font-size:1.1rem;font-weight:400;color:var(--black);letter-spacing:.02em;white-space:nowrap}
+        .nav-logo span{color:var(--accent)}
+        .nav-tabs{display:flex;gap:0;overflow-x:auto}
+        .nav-tab{padding:.35rem .65rem;font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;color:var(--medium-gray);position:relative;transition:color .3s;white-space:nowrap;cursor:pointer}
+        .nav-tab:hover{color:var(--black)}
+        .nav-tab.active{color:var(--accent)}
+        .nav-tab.active::after{content:'';position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);width:16px;height:2px;background:var(--accent)}
+        .nav-right{display:flex;align-items:center;gap:1rem;flex-shrink:0}
+        .nav-back{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--medium-gray);transition:color .3s}
+        .nav-back:hover{color:var(--accent)}
+
+        /* ── Layout ── */
+        .layout{display:flex;max-width:1400px;margin:0 auto;padding-top:48px}
+
+        /* ── Sidebar ── */
+        .sidebar{width:240px;border-right:1px solid var(--light-gray);padding:1.2rem;position:sticky;top:48px;height:calc(100vh - 48px);overflow-y:auto;background:var(--off-white);flex-shrink:0}
+        .sb-header{margin-bottom:1rem;padding-bottom:.7rem;border-bottom:1px solid var(--light-gray)}
+        .sb-title{font-family:var(--font-serif);font-size:.95rem;font-weight:400;color:var(--black);margin-bottom:.15rem}
+        .sb-desc{font-size:.7rem;color:var(--medium-gray);line-height:1.5}
+        .sb-group{margin-bottom:1rem}
+        .sb-group-label{font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--medium-gray);font-weight:500;padding:.2rem .6rem .4rem;display:block}
+        .sb-btn{width:100%;text-align:left;padding:.38rem .6rem;font-size:.75rem;color:var(--dark-gray);border-left:2px solid transparent;transition:all .2s;display:flex;align-items:center;gap:.5rem}
+        .sb-btn:hover{background:#f2f2f2;color:var(--charcoal)}
+        .sb-btn.active{background:#f2f2f2;color:var(--accent);border-left-color:var(--accent)}
+        .sb-num{width:1.4rem;height:1.4rem;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:500;color:var(--medium-gray);border:1px solid var(--light-gray);border-radius:50%;flex-shrink:0}
+        .sb-btn.active .sb-num{background:var(--accent);color:var(--white);border-color:var(--accent)}
+        .sb-stage-badge{font-size:.55rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:.1rem .35rem;margin-left:auto;flex-shrink:0}
+        .sb-s0{background:#e8e8f8;color:#3730a3} .sb-s1{background:#d1fae5;color:#065f46}
+        .sb-s2{background:#fef3c7;color:#92400e} .sb-s3{background:#fce7f3;color:#9d174d}
+        .sb-s4{background:#f3e8ff;color:#6b21a8}
+
+        /* ── Main ── */
+        .main{flex:1;min-width:0}
+        .content-area{max-width:860px;margin:0 auto;padding:1.5rem 2rem 3rem}
+
+        /* ── Section panels ── */
+        .panel{display:none}
+        .panel.active{display:block;animation:fadeUp .3s ease-out}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+        /* ── Hero (compact) ── */
+        .hero{padding:2.5rem 2rem;text-align:center;background:linear-gradient(180deg,var(--off-white) 0%,#f2f2f2 100%);border-bottom:1px solid var(--light-gray);position:relative;margin-bottom:1.5rem}
+        .hero::before{content:'';position:absolute;top:40%;left:50%;transform:translateX(-50%);width:400px;height:200px;background:radial-gradient(circle,var(--accent-light) 0%,transparent 70%);opacity:.08;filter:blur(60px)}
+        .hero-label{font-size:.6rem;letter-spacing:.25em;text-transform:uppercase;color:var(--accent);margin-bottom:.4rem;font-weight:500}
+        .hero h1{font-family:var(--font-serif);font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:300;color:var(--black);margin-bottom:.4rem;letter-spacing:-.02em}
+        .hero h1 em{font-style:italic;color:var(--accent)}
+        .hero-desc{color:var(--dark-gray);max-width:520px;margin:0 auto .9rem;font-size:.88rem;line-height:1.75}
+        .badges{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap}
+        .badge{padding:.25rem .65rem;background:rgba(255,255,255,.7);border:1px solid var(--light-gray);font-size:.62rem;letter-spacing:.04em;color:var(--dark-gray);transition:all .3s}
+        .badge:hover{border-color:var(--accent);color:var(--accent)}
+
+        /* ── Section header ── */
+        .sec-head{margin-bottom:1.2rem;padding-bottom:.7rem;border-bottom:1px solid var(--light-gray)}
+        .sec-label{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:500;margin-bottom:.2rem}
+        .sec-title{font-family:var(--font-serif);font-size:clamp(1.2rem,2.5vw,1.6rem);font-weight:300;color:var(--black)}
+        .sec-title em{font-style:italic;color:var(--accent)}
+
+        /* ── Cards ── */
+        .card{background:var(--white);border:1px solid var(--light-gray);margin-bottom:1rem;overflow:hidden;transition:box-shadow .3s}
+        .card:hover{box-shadow:0 2px 10px rgba(0,0,0,.03)}
+        .card-header{background:#f2f2f2;padding:.6rem 1rem;font-family:var(--font-serif);font-size:.9rem;font-weight:400;color:var(--black);border-bottom:1px solid var(--light-gray);display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+        .card-body{padding:1rem}
+        .card-body p{font-size:.85rem;color:var(--dark-gray);line-height:1.75;margin-bottom:.5rem}
+        .card-body p:last-child{margin-bottom:0}
+        .card-body strong{color:var(--charcoal);font-weight:500}
+
+        /* ── Stage divider ── */
+        .stage-div{display:flex;align-items:center;gap:.8rem;padding:.9rem 0;margin:1.8rem 0 1.2rem;border-bottom:2px solid var(--light-gray)}
+        .stage-div-num{font-family:var(--font-serif);font-size:2.8rem;font-weight:300;color:var(--accent-light);font-style:italic;line-height:1}
+        .stage-div-content h2{font-family:var(--font-serif);font-size:1.25rem;font-weight:400;color:var(--black)}
+        .stage-div-content p{font-size:.72rem;color:var(--medium-gray);margin-top:.1rem}
+        .stage-div-badge{margin-left:auto;font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.25rem .65rem;flex-shrink:0}
+
+        /* ── Code blocks ── */
+        pre.cb{font-family:var(--font-mono);font-size:.76rem;line-height:1.7;background:var(--code-bg);color:#d4d0cc;padding:1rem 1.2rem;overflow-x:auto;white-space:pre;border-left:3px solid var(--accent);margin:.7rem 0}
+        pre.cb .cm{color:#6a9955;font-style:italic}
+        pre.cb .pr{color:var(--accent);user-select:none}
+        pre.cb .cmd{color:#9cdcfe}
+        pre.cb .kw{color:#c586c0}
+        pre.cb .fn{color:#dcdcaa}
+        pre.cb .st{color:#ce9178}
+        pre.cb .num{color:#b5cea8}
+        pre.cb .tp{color:#4ec9b0}
+        pre.cb .pp{color:#c586c0}
+        pre.cb .dir{color:var(--accent);font-weight:500}
+        pre.cb .file{color:#d4d0cc}
+        pre.cb .new{color:#6a9955;font-weight:500}
+        pre.cb .note{color:#6a9955;font-style:italic}
+
+        /* ── Info boxes ── */
+        .ib{padding:.75rem 1rem;margin:.7rem 0;border-left:3px solid var(--accent)}
+        .ib.info{background:#f0ede8}
+        .ib.tip{background:var(--success-bg);border-left-color:var(--success)}
+        .ib.warn{background:var(--warning-bg);border-left-color:var(--accent-warm)}
+        .ib.ref{background:var(--accent-pale);border-left-color:var(--accent)}
+        .ib h4{font-family:var(--font-serif);font-weight:400;font-size:.88rem;margin-bottom:.25rem}
+        .ib.info h4{color:var(--accent)} .ib.tip h4{color:var(--success)}
+        .ib.warn h4{color:var(--accent-warm)} .ib.ref h4{color:var(--accent)}
+        .ib p,.ib li{color:var(--dark-gray);font-size:.82rem;line-height:1.65}
+        .ib ul{margin-left:1rem;margin-top:.2rem}
+        .ib code{font-family:var(--font-mono);font-size:.76em;background:#e8e5e0;padding:.05rem .3rem}
+
+        /* ── Inline code ── */
+        code{font-family:var(--font-mono);font-size:.8em;background:#f2f2f2;padding:.05rem .32rem;color:var(--accent)}
+
+        /* ── Tables ── */
+        .tbl{width:100%;border-collapse:collapse;font-size:.8rem;margin:.6rem 0}
+        .tbl th{text-align:left;padding:.4rem .7rem;font-weight:500;color:var(--dark-gray);background:#f2f2f2;border-bottom:1px solid var(--light-gray);font-size:.65rem;letter-spacing:.05em;text-transform:uppercase}
+        .tbl td{padding:.4rem .7rem;border-bottom:1px solid #f2f2f2;color:var(--charcoal);vertical-align:top;font-size:.8rem}
+        .tbl td code{background:#f2f2f2;font-size:.76em}
+        .tbl tr:last-child td{border-bottom:none}
+        .tbl tr:hover td{background:#fafafa}
+        .tbl td strong{color:var(--black);font-weight:500}
+
+        /* ── Arrow list ── */
+        .alist{list-style:none;margin:.5rem 0}
+        .alist li{padding:.28rem 0 .28rem 1.2rem;position:relative;font-size:.83rem;color:var(--dark-gray);border-bottom:1px solid #fafafa;line-height:1.5}
+        .alist li:last-child{border-bottom:none}
+        .alist li::before{content:'→';position:absolute;left:0;color:var(--accent-light);font-size:.72rem}
+
+        /* ── File tree ── */
+        pre.ft{font-family:var(--font-mono);font-size:.78rem;line-height:1.65;background:#f2f2f2;border-left:3px solid var(--accent);padding:1rem 1.2rem;overflow-x:auto;white-space:pre;color:var(--dark-gray);margin:.7rem 0}
+        pre.ft .dir{color:var(--accent);font-weight:500}
+        pre.ft .file{color:var(--black)}
+        pre.ft .new{color:#15803d;font-weight:500}
+        pre.ft .note{color:var(--medium-gray);font-style:italic}
+
+        /* ── Tab bar ── */
+        .tab-bar{display:flex;gap:0;border-bottom:1px solid var(--light-gray);margin-bottom:.8rem;flex-wrap:wrap}
+        .tab-btn{padding:.35rem .65rem;color:var(--medium-gray);font-size:.68rem;font-weight:400;position:relative;transition:color .3s;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+        .tab-btn:hover{color:var(--black)}
+        .tab-btn.active{color:var(--accent)}
+        .tab-btn.active::after{content:'';position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);width:16px;height:2px;background:var(--accent)}
+        .tab-pane{display:none}
+        .tab-pane.active{display:block}
+
+        /* ── Two-column grid ── */
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:.6rem 0}
+        .concept-card{background:#f2f2f2;border-left:2px solid var(--accent-light);padding:.8rem 1rem;transition:border-color .3s}
+        .concept-card:hover{border-left-color:var(--accent)}
+        .concept-card h4{font-family:var(--font-serif);font-size:.9rem;font-weight:400;color:var(--black);margin-bottom:.2rem}
+        .concept-card p{font-size:.78rem;color:var(--dark-gray);line-height:1.6}
+
+        /* ── Buttons ── */
+        .btn{padding:.35rem .7rem;font-size:.65rem;letter-spacing:.05em;text-transform:uppercase;font-weight:500;transition:all .3s;display:inline-flex;align-items:center;gap:.3rem}
+        .btn-primary{background:var(--accent);color:var(--white)}
+        .btn-primary:hover{background:var(--charcoal)}
+        .btn-secondary{background:#f2f2f2;color:var(--dark-gray);border:1px solid var(--light-gray)}
+        .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+        .btn-group{display:flex;gap:.5rem;margin-top:.8rem;flex-wrap:wrap}
+
+        /* ── Extensions box ── */
+        .ext-box{background:var(--white);border:1px solid var(--light-gray);margin:1.2rem 0}
+        .ext-box-head{background:#f2f2f2;padding:.5rem 1rem;border-bottom:1px solid var(--light-gray);font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+        .ext-box-body{padding:.8rem 1rem}
+
+        /* ── Footer ── */
+        footer{border-top:1px solid var(--light-gray);padding:1.5rem 2rem;text-align:center;margin-top:2rem}
+        footer p{color:var(--medium-gray);font-size:.72rem;margin-bottom:.25rem}
+        .footer-links{display:flex;gap:1.2rem;justify-content:center;margin-top:.5rem;flex-wrap:wrap}
+        .footer-links a{font-size:.68rem;color:var(--accent);letter-spacing:.04em}
+
+        /* ── Responsive ── */
+        @media(max-width:900px){
+            .layout{flex-direction:column}
+            .sidebar{display:none}
+            .content-area{padding:1rem}
+            .grid2{grid-template-columns:1fr}
+        }
+        @media(max-width:600px){
+            .topnav-inner{padding:.5rem 1rem}
+            .hero{padding:2rem 1rem}
+        }
+    </style>
+</head>
+<body>
+
+<div class="scroll-bar" id="scrollBar"></div>
+
+<!-- Nav -->
+<nav class="topnav" id="topnav">
+    <div class="topnav-inner">
+        <div class="nav-logo">SENG<span>-</span>21213</div>
+        <div class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" data-group="guide">Guide</button>
+            <button class="nav-tab" data-group="stage0">Stage 0</button>
+            <button class="nav-tab" data-group="stage1">Stage 1</button>
+            <button class="nav-tab" data-group="stage2">Stage 2</button>
+            <button class="nav-tab" data-group="stage3">Stage 3</button>
+            <button class="nav-tab" data-group="stage4">Stage 4</button>
+        </div>
+        <div class="nav-right">
+            <a href="index.html" class="nav-back">← Course Home</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Layout -->
+<div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sb-header">
+            <div class="sb-title">OS Build Guide</div>
+            <div class="sb-desc">Student guide &amp; implementation reference for all five stages</div>
+        </div>
+
+        <!-- Guide group -->
+        <div class="sb-group" id="sbg-guide">
+            <span class="sb-group-label">Student Guide</span>
+            <button class="sb-btn active" data-panel="overview">
+                <span class="sb-num">1</span>Overview
+            </button>
+            <button class="sb-btn" data-panel="toolchain">
+                <span class="sb-num">2</span>Toolchain Setup
+            </button>
+            <button class="sb-btn" data-panel="structure">
+                <span class="sb-num">3</span>Project Structure
+            </button>
+            <button class="sb-btn" data-panel="build">
+                <span class="sb-num">4</span>Build &amp; Run
+            </button>
+            <button class="sb-btn" data-panel="debugging">
+                <span class="sb-num">5</span>Debugging with GDB
+            </button>
+            <button class="sb-btn" data-panel="shell-cmds">
+                <span class="sb-num">6</span>Shell Commands
+            </button>
+            <button class="sb-btn" data-panel="submission">
+                <span class="sb-num">7</span>Submission &amp; FAQ
+            </button>
+        </div>
+
+        <!-- Stages group -->
+        <div class="sb-group" id="sbg-stages">
+            <span class="sb-group-label">OS Implementation</span>
+            <button class="sb-btn" data-panel="stage0">
+                <span class="sb-num">0</span>Boot &amp; Shell
+                <span class="sb-stage-badge sb-s0">Stage 0</span>
+            </button>
+            <button class="sb-btn" data-panel="stage1">
+                <span class="sb-num">1</span>Scheduler
+                <span class="sb-stage-badge sb-s1">Stage 1</span>
+            </button>
+            <button class="sb-btn" data-panel="stage2">
+                <span class="sb-num">2</span>Threads
+                <span class="sb-stage-badge sb-s2">Stage 2</span>
+            </button>
+            <button class="sb-btn" data-panel="stage3">
+                <span class="sb-num">3</span>Memory
+                <span class="sb-stage-badge sb-s3">Stage 3</span>
+            </button>
+            <button class="sb-btn" data-panel="stage4">
+                <span class="sb-num">4</span>File System
+                <span class="sb-stage-badge sb-s4">Stage 4</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+
+        <!-- Hero (shown on all panels) -->
+        <div class="hero">
+            <p class="hero-label">SENG 21213 · OS Assignment</p>
+            <h1>Building a Minimal OS <em>from Scratch</em></h1>
+            <p class="hero-desc">Student guide, toolchain setup, GDB debugging, and full stage-by-stage implementation reference — from a 512-byte MBR to a working file system.</p>
+            <div class="badges">
+                <span class="badge">Eng. Dr. Tiroshan Madushanka</span>
+                <span class="badge">x86-32 · NASM · C99</span>
+                <span class="badge">QEMU · GDB</span>
+                <span class="badge">Stallings 10th Ed.</span>
+                <span class="badge">5 Stages</span>
+            </div>
+        </div>
+
+        <div class="content-area">
+
+
+<!-- ══════════════════════════════════════════════════
+     PANEL: OVERVIEW
+══════════════════════════════════════════════════ -->
+<div class="panel active" id="panel-overview">
+    <div class="sec-head">
+        <p class="sec-label">About This Assignment</p>
+        <h2 class="sec-title">Overview</h2>
+    </div>
+    <div class="card">
+        <div class="card-header">What You Will Build</div>
+        <div class="card-body">
+            <p>This assignment asks you to build a <strong>minimal but functional operating system</strong> in C and x86-32 NASM assembly. Starting from nothing but a BIOS-loaded 512-byte sector, you will add subsystems stage by stage — a scheduler, concurrency primitives, a memory manager, and finally a file system — mirroring the sequence of OS lectures L07 through L12.</p>
+            <p>Every stage produces a system that <strong>boots in QEMU and passes shell-level tests</strong>. Each stage builds on the previous one. Read each stage article fully before writing any code.</p>
+        </div>
+    </div>
+    <div class="ib ref">
+        <h4>Textbook alignment</h4>
+        <p>All concepts are in <em>Stallings, Computer Organization and Architecture, 10th edition</em>. The lecture notes L07–L12 cover the theory; this guide is the implementation companion.</p>
+    </div>
+    <table class="tbl">
+        <thead><tr><th>Stage</th><th>Title</th><th>New concepts</th><th>Lecture</th></tr></thead>
+        <tbody>
+            <tr><td><strong>0</strong></td><td>Boot, VGA &amp; Shell</td><td>MBR, GDT, Protected Mode, VGA 0xB8000, PS/2</td><td>L07–L08</td></tr>
+            <tr><td><strong>1</strong></td><td>Process Table &amp; Scheduler</td><td>PCB, IDT, PIC, PIT, context switch, Round-Robin</td><td>L09</td></tr>
+            <tr><td><strong>2</strong></td><td>Threads, Mutex &amp; Semaphore</td><td>kernel threads, XCHG spinlock, blocking mutex, semaphore</td><td>L10</td></tr>
+            <tr><td><strong>3</strong></td><td>Physical Memory Manager</td><td>E820 memory map, bitmap allocator, 4 KB frames</td><td>L11</td></tr>
+            <tr><td><strong>4</strong></td><td>RAM Disk File System</td><td>superblock, inodes, block bitmap, POSIX API</td><td>L12</td></tr>
+        </tbody>
+    </table>
+    <div class="btn-group">
+        <button class="btn btn-primary" onclick="goPanel('toolchain')">Get Started →</button>
+        <button class="btn btn-secondary" onclick="goPanel('stage0')">Jump to Stage 0</button>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PANEL: TOOLCHAIN
+══════════════════════════════════════════════════ -->
+<div class="panel" id="panel-toolchain">
+    <div class="sec-head">
+        <p class="sec-label">Setup</p>
+        <h2 class="sec-title">Toolchain Setup</h2>
+    </div>
+
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="tc-ubuntu">Ubuntu / Debian</button>
+        <button class="tab-btn" data-tab="tc-mac">macOS</button>
+        <button class="tab-btn" data-tab="tc-win">Windows (WSL2)</button>
+        <button class="tab-btn" data-tab="tc-verify">Verify</button>
+    </div>
+
+    <div class="tab-pane active" id="tc-ubuntu">
+        <pre class="cb"><span class="cm"># Install all required tools in one command</span>
+<span class="pr">$</span> <span class="cmd">sudo apt update</span>
+<span class="pr">$</span> <span class="cmd">sudo apt install nasm gcc gcc-multilib make qemu-system-i386 gdb</span>
+
+<span class="cm"># Optional: cross-compiler (cleaner than -m32 on host gcc)</span>
+<span class="cm"># If the package exists in your distro:</span>
+<span class="pr">$</span> <span class="cmd">sudo apt install gcc-i686-linux-gnu</span></pre>
+    </div>
+
+    <div class="tab-pane" id="tc-mac">
+        <pre class="cb"><span class="cm"># Install Homebrew first: https://brew.sh</span>
+<span class="pr">$</span> <span class="cmd">brew install nasm qemu gdb</span>
+
+<span class="cm"># Cross-compiler (recommended — avoids macOS SDK interference)</span>
+<span class="pr">$</span> <span class="cmd">brew install i686-elf-gcc</span>
+
+<span class="cm"># GDB on macOS requires code-signing (see OSDev Wiki)</span>
+<span class="cm"># Alternative: use lldb or QEMU monitor instead</span></pre>
+    </div>
+
+    <div class="tab-pane" id="tc-win">
+        <pre class="cb"><span class="cm"># Enable WSL2 then install Ubuntu from the Microsoft Store</span>
+<span class="cm"># Inside the Ubuntu WSL2 shell:</span>
+<span class="pr">$</span> <span class="cmd">sudo apt update && sudo apt install nasm gcc gcc-multilib make qemu-system-i386 gdb</span>
+
+<span class="cm"># Run QEMU with a display from WSL2 — install an X server (VcXsrv / X410)</span>
+<span class="cm"># or use the -nographic flag for serial-only output:</span>
+<span class="pr">$</span> <span class="cmd">qemu-system-i386 -drive format=raw,file=seng21213.img -nographic</span></pre>
+    </div>
+
+    <div class="tab-pane" id="tc-verify">
+        <pre class="cb"><span class="cm"># Confirm each tool is available and check versions</span>
+<span class="pr">$</span> <span class="cmd">nasm --version</span>
+NASM version 2.15.05
+
+<span class="pr">$</span> <span class="cmd">gcc --version | head -1</span>
+gcc (Ubuntu 11.4.0) 11.4.0
+
+<span class="pr">$</span> <span class="cmd">qemu-system-i386 --version | head -1</span>
+QEMU emulator version 6.2.0
+
+<span class="pr">$</span> <span class="cmd">gdb --version | head -1</span>
+GNU gdb (Ubuntu) 12.1</pre>
+        <div class="ib tip">
+            <h4>All four tools must be present</h4>
+            <p>The Makefile uses <code>nasm</code>, <code>gcc</code> (or <code>i686-elf-gcc</code>), <code>ld</code>, <code>objcopy</code>, and <code>qemu-system-i386</code>. If any is missing, <code>make</code> will fail with a "command not found" error.</p>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PANEL: PROJECT STRUCTURE
+══════════════════════════════════════════════════ -->
+<div class="panel" id="panel-structure">
+    <div class="sec-head">
+        <p class="sec-label">Codebase</p>
+        <h2 class="sec-title">Project Structure</h2>
+    </div>
+    <div class="card">
+        <div class="card-header">Stage 0 Starter Kit — directory layout</div>
+        <div class="card-body">
+<pre class="ft"><span class="dir">stage0/</span>
+├── <span class="dir">boot/</span>
+│   └── <span class="file">boot.asm</span>              <span class="note"># 512-byte MBR (NASM) — do not modify for Stage 0</span>
+├── <span class="dir">kernel/</span>
+│   ├── <span class="file">kernel.c</span>              <span class="note"># kernel_main() — C entry point, add Stage 1–4 inits here</span>
+│   ├── <span class="file">shell.c</span>               <span class="note"># Shell loop + command table — add new commands here</span>
+│   └── <span class="file">string.c</span>              <span class="note"># memset, strlen, strcmp etc. (no libc available)</span>
+├── <span class="dir">drivers/</span>
+│   ├── <span class="dir">vga/</span>
+│   │   └── <span class="file">vga.c</span>             <span class="note"># VGA text driver — writes to 0xB8000</span>
+│   └── <span class="dir">keyboard/</span>
+│       └── <span class="file">keyboard.c</span>        <span class="note"># PS/2 keyboard driver (polling)</span>
+├── <span class="dir">include/</span>
+│   ├── <span class="file">kernel.h</span>              <span class="note"># kernel_main / kernel_halt declarations</span>
+│   ├── <span class="file">vga.h</span>                 <span class="note"># VGA public API + colour enum</span>
+│   ├── <span class="file">keyboard.h</span>            <span class="note"># Keyboard public API</span>
+│   ├── <span class="file">io.h</span>                  <span class="note"># Inline x86 IN/OUT port helpers</span>
+│   ├── <span class="file">shell.h</span>               <span class="note"># shell_run() declaration</span>
+│   └── <span class="file">string.h</span>              <span class="note"># Minimal string library</span>
+├── <span class="file">linker.ld</span>                 <span class="note"># Linker script — places kernel at 0x10000</span>
+├── <span class="file">Makefile</span>                  <span class="note"># Full build system</span>
+└── <span class="file">run.sh</span>                    <span class="note"># Convenience QEMU launch script</span></pre>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">Files you add per stage — <span class="new" style="color:#15803d;font-family:var(--font-mono);font-size:.8rem">green = new</span></div>
+        <div class="card-body">
+<pre class="ft"><span class="dir">seng21213-os/</span>
+├── <span class="dir">boot/</span>
+│   ├── <span class="file">boot.asm</span>             <span class="note"># Stage 0 (starter)</span>
+│   └── <span class="new">switch.asm</span>           <span class="note"># Stage 1 — PUSHAD/POPAD context switch</span>
+├── <span class="dir">kernel/</span>
+│   ├── <span class="file">kernel.c</span>  <span class="file">shell.c</span>  <span class="file">string.c</span>   <span class="note"># Stage 0</span>
+│   ├── <span class="new">process.c</span>  <span class="new">scheduler.c</span>  <span class="new">idt.c</span>      <span class="note"># Stage 1</span>
+│   ├── <span class="new">thread.c</span>   <span class="new">mutex.c</span>      <span class="new">semaphore.c</span> <span class="note"># Stage 2</span>
+│   ├── <span class="new">pmm.c</span>                              <span class="note"># Stage 3</span>
+│   └── <span class="new">ramdisk.c</span>  <span class="new">fs.c</span>                   <span class="note"># Stage 4</span>
+├── <span class="dir">include/</span>
+│   ├── <span class="file">kernel.h</span>  <span class="file">vga.h</span>  <span class="file">keyboard.h</span>  <span class="file">io.h</span>  <span class="file">shell.h</span>  <span class="file">string.h</span>
+│   ├── <span class="new">process.h</span>  <span class="new">scheduler.h</span>  <span class="new">idt.h</span>
+│   ├── <span class="new">thread.h</span>   <span class="new">mutex.h</span>      <span class="new">semaphore.h</span>
+│   ├── <span class="new">pmm.h</span>
+│   └── <span class="new">ramdisk.h</span>  <span class="new">fs.h</span>
+├── <span class="file">linker.ld</span>  <span class="file">Makefile</span>  <span class="file">run.sh</span>  <span class="file">README.md</span>
+└── <span class="file">.gitignore</span></pre>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PANEL: BUILD & RUN
+══════════════════════════════════════════════════ -->
+<div class="panel" id="panel-build">
+    <div class="sec-head">
+        <p class="sec-label">Build System</p>
+        <h2 class="sec-title">Build &amp; Run</h2>
+    </div>
+
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="b-start">First Run</button>
+        <button class="tab-btn" data-tab="b-make">Make Targets</button>
+        <button class="tab-btn" data-tab="b-qemu">QEMU Options</button>
+    </div>
+
+    <div class="tab-pane active" id="b-start">
+        <pre class="cb"><span class="cm"># 1. Extract the starter kit</span>
+<span class="pr">$</span> <span class="cmd">tar -xzf SENG21213_OS_Stage0.tar.gz</span>
+<span class="pr">$</span> <span class="cmd">cd stage0</span>
+
+<span class="cm"># 2. Build the disk image</span>
+<span class="pr">$</span> <span class="cmd">make</span>
+  AS    boot/boot.asm
+  CC    kernel/kernel.c
+  CC    kernel/shell.c
+  CC    kernel/string.c
+  CC    drivers/vga/vga.c
+  CC    drivers/keyboard/keyboard.c
+  LD    build/kernel.elf
+  BIN   build/kernel.bin
+  IMG   seng21213.img
+
+<span class="cm"># 3. Run in QEMU</span>
+<span class="pr">$</span> <span class="cmd">make run</span>
+<span class="cm"># [  OK  ] VGA driver initialised</span>
+<span class="cm"># [  OK  ] PS/2 keyboard driver initialised</span>
+<span class="cm"># kernel&gt; _</span></pre>
+    </div>
+
+    <div class="tab-pane" id="b-make">
+        <table class="tbl">
+            <thead><tr><th>Target</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td><code>make</code></td><td>Build everything — produces <code>seng21213.img</code></td></tr>
+                <tr><td><code>make run</code></td><td>Build + launch QEMU with a VGA window</td></tr>
+                <tr><td><code>make debug</code></td><td>Build + launch QEMU paused, waiting for GDB on <code>localhost:1234</code></td></tr>
+                <tr><td><code>make gdb</code></td><td>Attach GDB to a running debug session with <code>kernel.elf</code> symbols</td></tr>
+                <tr><td><code>make info</code></td><td>Show section layout and top symbols from <code>kernel.elf</code></td></tr>
+                <tr><td><code>make clean</code></td><td>Remove <code>build/</code> directory and <code>seng21213.img</code></td></tr>
+            </tbody>
+        </table>
+        <div class="ib info">
+            <h4>Cross-compiler fallback</h4>
+            <p>If <code>i686-elf-gcc</code> is not installed the Makefile automatically falls back to <code>gcc -m32</code>. Both produce identical binaries for a flat kernel with no OS-specific ABI.</p>
+        </div>
+    </div>
+
+    <div class="tab-pane" id="b-qemu">
+        <pre class="cb"><span class="cm"># Standard run (VGA window + stdio serial)</span>
+<span class="pr">$</span> <span class="cmd">qemu-system-i386 -drive format=raw,file=seng21213.img,if=ide -m 32M -no-reboot -serial stdio</span>
+
+<span class="cm"># No window (headless — serial output only)</span>
+<span class="pr">$</span> <span class="cmd">qemu-system-i386 -drive format=raw,file=seng21213.img -m 32M -nographic</span>
+
+<span class="cm"># Debug mode — QEMU pauses at startup, waits for GDB</span>
+<span class="pr">$</span> <span class="cmd">qemu-system-i386 -drive format=raw,file=seng21213.img -m 32M -no-reboot -s -S</span>
+
+<span class="cm"># Increase memory for Stage 3/4 testing</span>
+<span class="pr">$</span> <span class="cmd">qemu-system-i386 -drive format=raw,file=seng21213.img -m 128M -no-reboot</span></pre>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PANEL: DEBUGGING
+══════════════════════════════════════════════════ -->
+<div class="panel" id="panel-debugging">
+    <div class="sec-head">
+        <p class="sec-label">GDB</p>
+        <h2 class="sec-title">Debugging with GDB</h2>
+    </div>
+    <div class="ib info">
+        <h4>Two terminals required</h4>
+        <p>Run <code>make debug</code> in Terminal 1 (QEMU pauses). Then run <code>make gdb</code> in Terminal 2 to attach. QEMU will unblock and run until the <code>kernel_main</code> breakpoint is hit.</p>
+    </div>
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="d-setup">Setup</button>
+        <button class="tab-btn" data-tab="d-cmds">GDB Commands</button>
+        <button class="tab-btn" data-tab="d-tips">Tips</button>
+    </div>
+    <div class="tab-pane active" id="d-setup">
+        <pre class="cb"><span class="cm"># Terminal 1 — start QEMU paused</span>
+<span class="pr">$</span> <span class="cmd">make debug</span>
+  QEMU [debug mode] — waiting for GDB on :1234
+
+<span class="cm"># Terminal 2 — attach GDB</span>
+<span class="pr">$</span> <span class="cmd">make gdb</span>
+<span class="cm"># Equivalent to:</span>
+<span class="pr">$</span> <span class="cmd">gdb -ex "file build/kernel.elf" \
+       -ex "target remote localhost:1234" \
+       -ex "break kernel_main" \
+       -ex "continue"</span>
+
+Breakpoint 1, kernel_main () at kernel/kernel.c:45
+45          vga_init();</pre>
+    </div>
+    <div class="tab-pane" id="d-cmds">
+        <table class="tbl">
+            <thead><tr><th>Command</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td><code>break vga_puts</code></td><td>Set breakpoint at function entry</td></tr>
+                <tr><td><code>break shell.c:88</code></td><td>Set breakpoint at specific line</td></tr>
+                <tr><td><code>continue</code> / <code>c</code></td><td>Run until next breakpoint</td></tr>
+                <tr><td><code>stepi</code> / <code>si</code></td><td>Step one x86 instruction</td></tr>
+                <tr><td><code>next</code> / <code>n</code></td><td>Step one C source line (skip calls)</td></tr>
+                <tr><td><code>info registers</code></td><td>Print all CPU registers</td></tr>
+                <tr><td><code>x/10xw 0xB8000</code></td><td>Examine VGA buffer (10 words hex)</td></tr>
+                <tr><td><code>x/10xw 0x90000</code></td><td>Examine kernel stack</td></tr>
+                <tr><td><code>print cur_row</code></td><td>Print a C variable</td></tr>
+                <tr><td><code>layout asm</code></td><td>Show TUI disassembly pane</td></tr>
+                <tr><td><code>layout src</code></td><td>Show TUI source pane</td></tr>
+                <tr><td><code>backtrace</code> / <code>bt</code></td><td>Print call stack</td></tr>
+                <tr><td><code>info breakpoints</code></td><td>List all breakpoints</td></tr>
+                <tr><td><code>delete 1</code></td><td>Delete breakpoint #1</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="tab-pane" id="d-tips">
+        <ul class="alist">
+            <li>The <code>kernel.elf</code> file contains full DWARF debug symbols. Always debug against this file, not the flat binary.</li>
+            <li>If QEMU seems stuck after <code>make debug</code>, it is waiting for GDB. This is intentional — QEMU starts with <code>-S</code> (freeze on start).</li>
+            <li>Use <code>x/s 0xB8000</code> to print the VGA buffer as a string — useful to confirm text output without needing a display.</li>
+            <li>Set a watchpoint on a global variable: <code>watch myglobal</code> — GDB will break every time the value changes.</li>
+            <li>The QEMU monitor (<code>Ctrl-Alt-2</code> in the QEMU window) lets you inspect memory, devices, and CPU state independently of GDB.</li>
+            <li>To re-run from scratch without quitting GDB: in QEMU press <code>Ctrl-Alt-2</code> → type <code>system_reset</code> → back to GDB and <code>continue</code>.</li>
+        </ul>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PANEL: SHELL COMMANDS
+══════════════════════════════════════════════════ -->
+<div class="panel" id="panel-shell-cmds">
+    <div class="sec-head">
+        <p class="sec-label">Shell Reference</p>
+        <h2 class="sec-title">Shell Commands</h2>
+    </div>
+    <div class="card">
+        <div class="card-header">Stage 0 — Built-in commands (starter kit)</div>
+        <div class="card-body">
+            <table class="tbl">
+                <thead><tr><th>Command</th><th>Usage</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>help</code></td><td><code>help</code></td><td>List all available commands with descriptions</td></tr>
+                    <tr><td><code>clear</code></td><td><code>clear</code></td><td>Clear the VGA screen and reset cursor to (0,0)</td></tr>
+                    <tr><td><code>echo</code></td><td><code>echo hello world</code></td><td>Print all arguments separated by spaces</td></tr>
+                    <tr><td><code>version</code></td><td><code>version</code></td><td>Print kernel name and version string</td></tr>
+                    <tr><td><code>colour</code></td><td><code>colour 14 1</code></td><td>Set foreground (0–15) and background (0–15) colour</td></tr>
+                    <tr><td><code>halt</code></td><td><code>halt</code></td><td>Disable interrupts and execute HLT — CPU stops</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">Stages 1–4 — commands you implement</div>
+        <div class="card-body">
+            <table class="tbl">
+                <thead><tr><th>Command</th><th>Stage</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ps</code></td><td>1</td><td>List all processes — PID, name, state, ticks</td></tr>
+                    <tr><td><code>kill &lt;pid&gt;</code></td><td>1 ext.</td><td>Set process state to ZOMBIE</td></tr>
+                    <tr><td><code>meminfo</code></td><td>3</td><td>Show total / used / free frame counts in KB</td></tr>
+                    <tr><td><code>ls</code></td><td>4</td><td>List all files with name and size</td></tr>
+                    <tr><td><code>touch &lt;name&gt;</code></td><td>4</td><td>Create an empty file</td></tr>
+                    <tr><td><code>cat &lt;name&gt;</code></td><td>4</td><td>Print file contents to the screen</td></tr>
+                    <tr><td><code>write &lt;name&gt; &lt;text&gt;</code></td><td>4</td><td>Write text to a file (truncate if exists)</td></tr>
+                    <tr><td><code>rm &lt;name&gt;</code></td><td>4</td><td>Delete a file</td></tr>
+                </tbody>
+            </table>
+            <div class="ib info">
+                <h4>How to add a command</h4>
+                <p>Open <code>kernel/shell.c</code>. Add a new entry to the <code>commands[]</code> array: <code>{ "name", "description", cmd_fn }</code>. Implement the <code>cmd_fn(int argc, char *argv[])</code> function above the table. Rebuild with <code>make</code>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PANEL: SUBMISSION & FAQ
+══════════════════════════════════════════════════ -->
+<div class="panel" id="panel-submission">
+    <div class="sec-head">
+        <p class="sec-label">Assessment</p>
+        <h2 class="sec-title">Submission &amp; FAQ</h2>
+    </div>
+
+    <div class="card">
+        <div class="card-header">GitHub Setup &amp; Submission</div>
+        <div class="card-body">
+            <pre class="cb"><span class="cm"># 1. Create a private repository on your personal GitHub account</span>
+<span class="cm">#    Go to https://github.com/new — set visibility to Private</span>
+<span class="cm">#    Repository name: seng21213-os</span>
+
+<span class="cm"># 2. Clone and copy the starter kit</span>
+<span class="pr">$</span> <span class="cmd">git clone https://github.com/&lt;your-username&gt;/seng21213-os.git</span>
+<span class="pr">$</span> <span class="cmd">cp -r stage0/* seng21213-os/ && cd seng21213-os</span>
+
+<span class="cm"># 3. Add .gitignore</span>
+<span class="pr">$</span> <span class="cmd">echo "build/\nseng21213.img\n*.o\n*.bin\n*.elf" &gt; .gitignore</span>
+
+<span class="cm"># 4. Initial commit</span>
+<span class="pr">$</span> <span class="cmd">git add . && git commit -m "Initial commit: Stage 0 starter kit"</span>
+<span class="pr">$</span> <span class="cmd">git push origin main</span>
+
+<span class="cm"># 5. Add lecturer as collaborator for review</span>
+<span class="cm">#    GitHub → Settings → Collaborators → Add: tiroshanm</span>
+
+<span class="cm"># 6. Tag each completed stage</span>
+<span class="pr">$</span> <span class="cmd">git tag v0.1-stage0 && git push origin --tags</span>
+<span class="pr">$</span> <span class="cmd">git tag v0.2-stage1 && git push origin --tags</span>
+<span class="pr">$</span> <span class="cmd">git tag v0.3-stage2 && git push origin --tags</span>
+<span class="pr">$</span> <span class="cmd">git tag v0.4-stage3 && git push origin --tags</span>
+<span class="pr">$</span> <span class="cmd">git tag v0.5-stage4 && git push origin --tags</span></pre>
+            <div class="ib warn">
+                <h4>Use your personal GitHub account</h4>
+                <p>Create the repository at <a href="https://github.com/new" target="_blank">github.com/new</a> and set visibility to <strong>Private</strong>. Add <code>tiroshanm</code> as a collaborator. Never commit <code>build/</code>, <code>*.img</code>, <code>*.o</code>, <code>*.bin</code>, or <code>*.elf</code>.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Marking Criteria (per stage)</div>
+        <div class="card-body">
+            <table class="tbl">
+                <thead><tr><th>Criterion</th><th>Marks</th></tr></thead>
+                <tbody>
+                    <tr><td>Boots in QEMU without crashing</td><td>20%</td></tr>
+                    <tr><td>All required shell commands work correctly</td><td>30%</td></tr>
+                    <tr><td>Code is well-commented with Stallings lecture references</td><td>20%</td></tr>
+                    <tr><td>README describes what you implemented and how to test it</td><td>15%</td></tr>
+                    <tr><td>At least one extension from the stage's extension list</td><td>15% (bonus)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Frequently Asked Questions</div>
+        <div class="card-body">
+            <ul class="alist">
+                <li><strong>QEMU shows a black screen.</strong> The kernel panicked before <code>vga_init()</code> ran, or the boot sector didn't load. Run <code>make debug</code> + <code>make gdb</code> and step through <code>boot.asm</code> to find where it stops.</li>
+                <li><strong>"No rule to make target".</strong> Run <code>make clean</code> then <code>make</code>. Check that all source files listed in the Makefile's <code>KERN_SRCS</code> variable exist.</li>
+                <li><strong>GDB says "Remote connection closed".</strong> QEMU exited (likely a triple fault). Add a breakpoint earlier — try <code>break kernel_main</code> before <code>continue</code>.</li>
+                <li><strong>Characters appear garbled in QEMU.</strong> The attribute byte and character byte are swapped in <code>vga_cell()</code>. Check the bit-shift direction: <code>(attr &lt;&lt; 8) | (uint8_t)c</code>.</li>
+                <li><strong>Context switch causes a reboot.</strong> The stack offsets in <code>switch.asm</code> are wrong. After <code>PUSHAD</code> (8 × 4 = 32 bytes) + return address (4 bytes) the arguments are at <code>[esp+36]</code> and <code>[esp+40]</code>.</li>
+                <li><strong>Stage 3: pmm_alloc_frame() always returns 0.</strong> <code>pmm_init()</code> didn't run, or the E820 map wasn't written to <code>0x8000</code> by the bootloader. Add a <code>vga_printf</code> in <code>pmm_init()</code> to print the entry count.</li>
+                <li><strong>Can I use a different language?</strong> No. The assignment requires C99 and NASM x86-32 assembly as specified.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PANEL: STAGE 0
+══════════════════════════════════════════════════ -->
+<div class="panel" id="panel-stage0">
+    <div class="stage-div">
+        <div class="stage-div-num">0</div>
+        <div class="stage-div-content">
+            <h2>Boot, VGA &amp; Shell</h2>
+            <p>Lectures 07–08 · Stallings Ch. 2, 11 · Starter kit provided</p>
+        </div>
+        <span class="stage-div-badge sb-s0">Stage 0</span>
+    </div>
+
+    <div class="ib ref">
+        <h4>What you need to understand first</h4>
+        <p>Read L07 §4 (x86 boot sequence, GDT, Protected Mode) and L08 §1 (VGA text mode, I/O ports) before writing any code. The starter kit implements everything in Stage 0 — your job is to <strong>understand it thoroughly</strong>, get it running, and implement at least one extension.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">① The Boot Sequence — 8 ordered steps</div>
+        <div class="card-body">
+            <table class="tbl">
+                <thead><tr><th>#</th><th>Action</th><th>Why it matters</th></tr></thead>
+                <tbody>
+                    <tr><td>1</td><td><code>CLI</code> — disable interrupts</td><td>Prevent IRQs firing while GDT is being loaded</td></tr>
+                    <tr><td>2</td><td>Set up stack at <code>0x7C00</code></td><td>C code and <code>CALL</code> need a stack</td></tr>
+                    <tr><td>3</td><td><code>INT 0x13 AH=0x42</code> — extended read</td><td>Load kernel from disk; last BIOS call before mode switch</td></tr>
+                    <tr><td>4</td><td><code>LGDT [gdt_descriptor]</code></td><td>Tell CPU where the 3-entry GDT lives</td></tr>
+                    <tr><td>5</td><td><code>OR CR0, 1</code> — set PE bit</td><td>Protection Enable — enters Protected Mode</td></tr>
+                    <tr><td>6</td><td><code>JMP 0x08:pm_entry</code> (FAR JUMP)</td><td>Flushes the prefetch queue; reloads CS from GDT</td></tr>
+                    <tr><td>7</td><td>Set DS/ES/SS = <code>0x10</code></td><td>Load data segment selector for 32-bit flat mode</td></tr>
+                    <tr><td>8</td><td><code>JMP kernel_main</code></td><td>Hand off to C — never returns to boot.asm</td></tr>
+                </tbody>
+            </table>
+            <div class="ib info">
+                <h4>Why the FAR JUMP at step 6?</h4>
+                <p>After writing to CR0 the CPU is in Protected Mode but the code-segment cache still holds Real Mode attributes. The FAR JUMP forces a CS reload from the GDT, completing the transition. Without it the next instruction decodes with wrong operand sizes.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">② GDT — 3 descriptors, 24 bytes total</div>
+        <div class="card-body">
+            <pre class="cb"><span class="cm">; Entry 0: null (required — selector 0x00)</span>
+<span class="fn">gdt_null</span>: <span class="kw">dd</span> <span class="num">0</span>, <span class="num">0</span>
+
+<span class="cm">; Entry 1: code segment (selector 0x08) — base=0, limit=4GB, ring 0, 32-bit</span>
+<span class="fn">gdt_code</span>:
+    <span class="kw">dw</span> <span class="num">0xFFFF</span>   <span class="cm">; Limit 15:0</span>
+    <span class="kw">dw</span> <span class="num">0x0000</span>   <span class="cm">; Base  15:0</span>
+    <span class="kw">db</span> <span class="num">0x00</span>     <span class="cm">; Base  23:16</span>
+    <span class="kw">db</span> <span class="num">0x9A</span>     <span class="cm">; P=1 DPL=0 S=1 Type=Code R/X</span>
+    <span class="kw">db</span> <span class="num">0xCF</span>     <span class="cm">; G=1(4KB) DB=1(32-bit) Limit 19:16</span>
+    <span class="kw">db</span> <span class="num">0x00</span>     <span class="cm">; Base  31:24</span>
+
+<span class="cm">; Entry 2: data segment (selector 0x10) — same base/limit, type=Data R/W</span>
+<span class="fn">gdt_data</span>:
+    <span class="kw">dw</span> <span class="num">0xFFFF</span>  <span class="kw">dw</span> <span class="num">0x0000</span>  <span class="kw">db</span> <span class="num">0x00</span>
+    <span class="kw">db</span> <span class="num">0x92</span>     <span class="cm">; P=1 DPL=0 S=1 Type=Data R/W</span>
+    <span class="kw">db</span> <span class="num">0xCF</span>    <span class="kw">db</span> <span class="num">0x00</span></pre>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">③ VGA Driver — 0xB8000 text buffer</div>
+        <div class="card-body">
+            <pre class="cb"><span class="pp">#define</span> VGA_BUFFER ((<span class="tp">volatile uint16_t</span> *)<span class="num">0xB8000</span>)
+<span class="cm">/* Each cell = 2 bytes: high=attribute (bg<<4|fg), low=ASCII */</span>
+<span class="kw">static inline</span> <span class="tp">uint16_t</span> <span class="fn">vga_cell</span>(<span class="tp">char</span> c, <span class="tp">uint8_t</span> attr) {
+    <span class="kw">return</span> (<span class="tp">uint16_t</span>)((attr &lt;&lt; <span class="num">8</span>) | (<span class="tp">uint8_t</span>)c);
+}
+<span class="cm">/* Hardware cursor via CRT ports 0x3D4/0x3D5 */</span>
+<span class="kw">void</span> <span class="fn">vga_update_hw_cursor</span>(<span class="tp">int</span> row, <span class="tp">int</span> col) {
+    <span class="tp">uint16_t</span> pos = (<span class="tp">uint16_t</span>)(row * <span class="num">80</span> + col);
+    <span class="fn">outb</span>(<span class="num">0x3D4</span>, <span class="num">0x0F</span>); <span class="fn">outb</span>(<span class="num">0x3D5</span>, pos &amp; <span class="num">0xFF</span>);
+    <span class="fn">outb</span>(<span class="num">0x3D4</span>, <span class="num">0x0E</span>); <span class="fn">outb</span>(<span class="num">0x3D5</span>, pos &gt;&gt; <span class="num">8</span>);
+}</pre>
+        </div>
+    </div>
+
+    <div class="ext-box">
+        <div class="ext-box-head">Extension Ideas — Stage 0 (bonus marks)</div>
+        <div class="ext-box-body">
+            <ul class="alist">
+                <li>Full ISO keyboard layout with Shift, CapsLock, and numeric keypad support</li>
+                <li>VGA scrolling ring buffer with Page-Up / Page-Down support</li>
+                <li>ANSI escape-code colour support (<code>ESC[31m</code> … <code>ESC[0m</code>) in the VGA driver</li>
+                <li>Command history (up/down arrow) with a 20-entry ring buffer in <code>keyboard_readline()</code></li>
+                <li>Tab-completion scanning the command table for prefix matches</li>
+                <li>Replace the custom bootloader with a GRUB2 multiboot header</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PANEL: STAGE 1
+══════════════════════════════════════════════════ -->
+<div class="panel" id="panel-stage1">
+    <div class="stage-div">
+        <div class="stage-div-num">1</div>
+        <div class="stage-div-content">
+            <h2>Process Table &amp; Round-Robin Scheduler</h2>
+            <p>Lecture 09 · Stallings Ch. 3, 9 · New: process.h/c, scheduler.h/c, idt.h/c, switch.asm</p>
+        </div>
+        <span class="stage-div-badge sb-s1">Stage 1</span>
+    </div>
+
+    <div class="card">
+        <div class="card-header">① PCB struct — Process Control Block</div>
+        <div class="card-body">
+            <pre class="cb"><span class="pp">#define</span> MAX_PROCS  <span class="num">16</span>
+<span class="pp">#define</span> STACK_SIZE <span class="num">4096</span>   <span class="cm">/* 4 KB kernel stack per process */</span>
+
+<span class="kw">typedef enum</span> {
+    PROC_UNUSED=<span class="num">0</span>, PROC_READY, PROC_RUNNING, PROC_BLOCKED, PROC_ZOMBIE
+} <span class="tp">proc_state_t</span>;
+
+<span class="kw">typedef struct</span> {
+    <span class="tp">uint32_t</span>      pid;
+    <span class="tp">proc_state_t</span>  state;
+    <span class="tp">uint32_t</span>      esp;          <span class="cm">/* saved ESP — set on context switch */</span>
+    <span class="tp">uint32_t</span>      stack_base;
+    <span class="kw">void</span>        (*entry)(<span class="kw">void</span>);
+    <span class="tp">char</span>          name[<span class="num">32</span>];
+    <span class="tp">uint32_t</span>      ticks;        <span class="cm">/* total CPU ticks consumed */</span>
+} <span class="tp">pcb_t</span>;</pre>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">② IDT + PIC remapping + PIT at 100 Hz</div>
+        <div class="card-body">
+            <pre class="cb"><span class="cm">/* Remap PIC: IRQ0-7 → vectors 32-39 */</span>
+<span class="fn">outb</span>(<span class="num">0x20</span>, <span class="num">0x11</span>); <span class="fn">outb</span>(<span class="num">0xA0</span>, <span class="num">0x11</span>);  <span class="cm">/* ICW1 */</span>
+<span class="fn">outb</span>(<span class="num">0x21</span>, <span class="num">0x20</span>); <span class="fn">outb</span>(<span class="num">0xA1</span>, <span class="num">0x28</span>);  <span class="cm">/* ICW2: offsets */</span>
+<span class="fn">outb</span>(<span class="num">0x21</span>, <span class="num">0x04</span>); <span class="fn">outb</span>(<span class="num">0xA1</span>, <span class="num">0x02</span>);  <span class="cm">/* ICW3 */</span>
+<span class="fn">outb</span>(<span class="num">0x21</span>, <span class="num">0x01</span>); <span class="fn">outb</span>(<span class="num">0xA1</span>, <span class="num">0x01</span>);  <span class="cm">/* ICW4: 8086 mode */</span>
+<span class="fn">outb</span>(<span class="num">0x21</span>, <span class="num">0x00</span>); <span class="fn">outb</span>(<span class="num">0xA1</span>, <span class="num">0xFF</span>);  <span class="cm">/* Unmask IRQ0 only */</span>
+
+<span class="cm">/* Program PIT channel 0: 100 Hz (divisor = 1193182 / 100) */</span>
+<span class="fn">outb</span>(<span class="num">0x43</span>, <span class="num">0x36</span>);          <span class="cm">/* Mode 3 square wave */</span>
+<span class="fn">outb</span>(<span class="num">0x40</span>, <span class="num">11931</span> &amp; <span class="num">0xFF</span>); <span class="cm">/* Divisor low byte  */</span>
+<span class="fn">outb</span>(<span class="num">0x40</span>, <span class="num">11931</span> &gt;&gt; <span class="num">8</span>);   <span class="cm">/* Divisor high byte */</span></pre>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">③ Context switch in NASM — PUSHAD/POPAD</div>
+        <div class="card-body">
+            <pre class="cb"><span class="cm">; context_switch(uint32_t *old_esp, uint32_t new_esp)</span>
+<span class="cm">; After PUSHAD (32 bytes) + ret addr (4 bytes): args at [esp+36], [esp+40]</span>
+<span class="kw">global</span> <span class="fn">context_switch</span>
+<span class="fn">context_switch</span>:
+    <span class="kw">pushad</span>                  <span class="cm">; Save EAX ECX EDX EBX ESP EBP ESI EDI</span>
+    <span class="kw">mov</span>  eax, [esp + <span class="num">36</span>]    <span class="cm">; old_esp pointer</span>
+    <span class="kw">mov</span>  [eax], esp         <span class="cm">; *old_esp = current ESP</span>
+    <span class="kw">mov</span>  esp, [esp + <span class="num">40</span>]    <span class="cm">; switch to new process stack</span>
+    <span class="kw">popad</span>                   <span class="cm">; Restore next process's registers</span>
+    <span class="kw">ret</span>                     <span class="cm">; Jump into next process's code</span></pre>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">④ Round-Robin scheduler — called from IRQ0 handler</div>
+        <div class="card-body">
+            <pre class="cb"><span class="kw">void</span> <span class="fn">scheduler_tick</span>(<span class="kw">void</span>) {
+    proc_table[current_proc].ticks++;
+    <span class="tp">int</span> next = (current_proc + <span class="num">1</span>) % MAX_PROCS, searched = <span class="num">0</span>;
+    <span class="kw">while</span> (searched++ &lt; MAX_PROCS) {
+        <span class="kw">if</span> (proc_table[next].state == PROC_READY) <span class="kw">break</span>;
+        next = (next + <span class="num">1</span>) % MAX_PROCS;
+    }
+    <span class="kw">if</span> (searched &gt; MAX_PROCS) <span class="kw">return</span>;
+    <span class="tp">int</span> old = current_proc;
+    proc_table[old].state  = PROC_READY;
+    proc_table[next].state = PROC_RUNNING;
+    current_proc = next;
+    <span class="fn">outb</span>(<span class="num">0x20</span>, <span class="num">0x20</span>);         <span class="cm">/* EOI — send BEFORE switch! */</span>
+    <span class="fn">context_switch</span>(&amp;proc_table[old].esp, proc_table[next].esp);
+}</pre>
+            <div class="ib warn">
+                <h4>Send EOI before context_switch()</h4>
+                <p>After <code>context_switch()</code> returns you are in a different process. If you send the PIC EOI after the switch, the original process may never run again to send it — timer ticks will stop.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="ext-box">
+        <div class="ext-box-head">Extension Ideas — Stage 1 (bonus marks)</div>
+        <div class="ext-box-body">
+            <ul class="alist">
+                <li>Multi-level feedback queue (MLFQ) with 3 priority bands and ageing to prevent starvation</li>
+                <li><code>sleep(ms)</code> syscall using the PIT tick counter and a wake-time-sorted sleep queue</li>
+                <li><code>fork()</code> — duplicate PCB, copy 4 KB stack, return 0 to child / PID to parent</li>
+                <li>CFS-style <code>vruntime</code> with a sorted run queue for proportional-share scheduling</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PANEL: STAGE 2
+══════════════════════════════════════════════════ -->
+<div class="panel" id="panel-stage2">
+    <div class="stage-div">
+        <div class="stage-div-num">2</div>
+        <div class="stage-div-content">
+            <h2>Threads, Mutex &amp; Semaphore</h2>
+            <p>Lecture 10 · Stallings Ch. 4–5 · New: thread.h/c, mutex.h/c, semaphore.h/c</p>
+        </div>
+        <span class="stage-div-badge sb-s2">Stage 2</span>
+    </div>
+
+    <div class="card">
+        <div class="card-header">① Race condition — myglobal demo</div>
+        <div class="card-body">
+            <p>Run this <strong>without a mutex first</strong>. Observe that <code>myglobal</code> is never exactly 200000. Then add a mutex and observe it is always exactly 200000. This is the empirical proof of Dijkstra's six requirements from L10.</p>
+            <pre class="cb"><span class="kw">static volatile int</span> myglobal = <span class="num">0</span>;
+<span class="kw">void</span> <span class="fn">thread_a</span>(<span class="kw">void</span>) {
+    <span class="kw">for</span> (<span class="tp">int</span> i = <span class="num">0</span>; i &lt; <span class="num">100000</span>; i++) myglobal++;   <span class="cm">/* NOT atomic! */</span>
+    <span class="fn">vga_printf</span>(<span class="st">"A done. myglobal=%d\n"</span>, myglobal);
+}
+<span class="kw">void</span> <span class="fn">thread_b</span>(<span class="kw">void</span>) {
+    <span class="kw">for</span> (<span class="tp">int</span> i = <span class="num">0</span>; i &lt; <span class="num">100000</span>; i++) myglobal++;
+    <span class="fn">vga_printf</span>(<span class="st">"B done. myglobal=%d\n"</span>, myglobal);
+}
+<span class="cm">/* Expected 200000 — without mutex, actual is somewhere 100000–200000 */</span></pre>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">② Mutex — atomic XCHG + blocking waiter queue</div>
+        <div class="card-body">
+            <pre class="cb"><span class="kw">static inline int</span> <span class="fn">atomic_xchg</span>(<span class="kw">volatile int</span> *ptr, <span class="tp">int</span> val) {
+    <span class="tp">int</span> old;
+    <span class="kw">__asm__ volatile</span>(<span class="st">"xchgl %0, %1"</span>
+        : <span class="st">"=r"</span>(old), <span class="st">"+m"</span>(*ptr) : <span class="st">"0"</span>(val) : <span class="st">"memory"</span>);
+    <span class="kw">return</span> old;
+}
+
+<span class="kw">void</span> <span class="fn">mutex_lock</span>(<span class="tp">mutex_t</span> *m) {
+    <span class="kw">while</span> (<span class="fn">atomic_xchg</span>(&amp;m-&gt;locked, <span class="num">1</span>) == <span class="num">1</span>) {
+        m-&gt;waiters[m-&gt;nwaiters++] = current_tid;
+        proc_table[current_tid].state = PROC_BLOCKED;
+        <span class="fn">scheduler_yield</span>();
+    }
+    m-&gt;owner = current_tid;
+}
+
+<span class="kw">void</span> <span class="fn">mutex_unlock</span>(<span class="tp">mutex_t</span> *m) {
+    m-&gt;owner = -<span class="num">1</span>; m-&gt;locked = <span class="num">0</span>;
+    <span class="kw">if</span> (m-&gt;nwaiters &gt; <span class="num">0</span>)
+        proc_table[m-&gt;waiters[--m-&gt;nwaiters]].state = PROC_READY;
+}</pre>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">③ Semaphore + producer-consumer validation</div>
+        <div class="card-body">
+            <pre class="cb"><span class="cm">/* Three-semaphore bounded buffer — Lecture 11 §3 */</span>
+<span class="tp">semaphore_t</span> sem_empty, sem_full, sem_mutex;
+<span class="tp">int</span> buffer[BUF_SIZE];
+
+<span class="kw">void</span> <span class="fn">producer</span>(<span class="kw">void</span>) {
+    <span class="kw">for</span> (;;) {
+        <span class="tp">int</span> item = <span class="fn">produce_item</span>();
+        <span class="fn">sem_wait</span>  (&amp;sem_empty);  <span class="cm">/* wait for empty slot */</span>
+        <span class="fn">sem_wait</span>  (&amp;sem_mutex);  <span class="cm">/* enter critical section */</span>
+        <span class="fn">insert_item</span>(buffer, item);
+        <span class="fn">sem_signal</span>(&amp;sem_mutex);  <span class="cm">/* leave critical section */</span>
+        <span class="fn">sem_signal</span>(&amp;sem_full);   <span class="cm">/* signal full slot */</span>
+    }
+}</pre>
+        </div>
+    </div>
+
+    <div class="ext-box">
+        <div class="ext-box-head">Extension Ideas — Stage 2 (bonus marks)</div>
+        <div class="ext-box-body">
+            <ul class="alist">
+                <li>Priority inheritance in the mutex — boost the lock holder's priority to the highest waiter's level</li>
+                <li>Read-write lock (<code>rwlock_t</code>) — concurrent readers, exclusive writers</li>
+                <li>Deadlock detector — DFS on the resource-allocation graph to find cycles</li>
+                <li>Barrier primitive — N threads all block at <code>barrier_wait()</code> and unblock together</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PANEL: STAGE 3
+══════════════════════════════════════════════════ -->
+<div class="panel" id="panel-stage3">
+    <div class="stage-div">
+        <div class="stage-div-num">3</div>
+        <div class="stage-div-content">
+            <h2>Physical Memory Manager</h2>
+            <p>Lecture 11 · Stallings Ch. 8 · New: pmm.h/c</p>
+        </div>
+        <span class="stage-div-badge sb-s3">Stage 3</span>
+    </div>
+
+    <div class="card">
+        <div class="card-header">① E820 memory map — detect RAM in Real Mode before PM switch</div>
+        <div class="card-body">
+            <pre class="cb"><span class="cm">; boot.asm — call BEFORE LGDT/CR0 (still in Real Mode)</span>
+<span class="fn">detect_memory</span>:
+    <span class="kw">mov</span>  di, <span class="num">0x8004</span>     <span class="cm">; write E820 entries starting at 0x8004</span>
+    <span class="kw">xor</span>  ebx, ebx        <span class="cm">; EBX=0 to begin</span>
+    <span class="kw">xor</span>  bp,  bp         <span class="cm">; entry count</span>
+<span class="fn">.loop</span>:
+    <span class="kw">mov</span>  eax, <span class="num">0xE820</span>
+    <span class="kw">mov</span>  ecx, <span class="num">24</span>         <span class="cm">; 24-byte entry</span>
+    <span class="kw">mov</span>  edx, <span class="num">0x534D4150</span> <span class="cm">; 'SMAP' magic</span>
+    <span class="kw">int</span>  <span class="num">0x15</span>
+    <span class="kw">jc</span>   .done           <span class="cm">; CF set = end or error</span>
+    <span class="kw">inc</span>  bp  <span class="kw">add</span>  di, <span class="num">24</span>
+    <span class="kw">test</span> ebx, ebx  <span class="kw">jnz</span> .loop
+<span class="fn">.done</span>: <span class="kw">mov</span> [<span class="num">0x8000</span>], bp  <span class="cm">; store count</span></pre>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">② Bitmap allocator — 1 bit per 4 KB frame</div>
+        <div class="card-body">
+            <pre class="cb"><span class="kw">static</span> <span class="tp">uint32_t</span> bitmap[<span class="num">32</span>*<span class="num">1024</span>*<span class="num">1024</span>/FRAME_SIZE/<span class="num">32</span>]; <span class="cm">/* 1 KB for 32 MB */</span>
+
+<span class="kw">static inline void</span> <span class="fn">bitmap_set</span>  (<span class="tp">uint32_t</span> f){bitmap[f/<span class="num">32</span>] |=  (<span class="num">1u</span>&lt;&lt;(f%<span class="num">32</span>));}
+<span class="kw">static inline void</span> <span class="fn">bitmap_clear</span>(<span class="tp">uint32_t</span> f){bitmap[f/<span class="num">32</span>] &amp;= ~(<span class="num">1u</span>&lt;&lt;(f%<span class="num">32</span>));}
+<span class="kw">static inline int</span>  <span class="fn">bitmap_test</span> (<span class="tp">uint32_t</span> f){<span class="kw">return</span>(bitmap[f/<span class="num">32</span>]&gt;&gt;(f%<span class="num">32</span>))&amp;<span class="num">1</span>;}
+
+<span class="tp">uint32_t</span> <span class="fn">pmm_alloc_frame</span>(<span class="kw">void</span>) {
+    <span class="kw">for</span> (<span class="tp">uint32_t</span> i = <span class="num">0</span>; i &lt; total_frames; i++) {
+        <span class="kw">if</span> (!<span class="fn">bitmap_test</span>(i)) {
+            <span class="fn">bitmap_set</span>(i); free_frames--;
+            <span class="kw">return</span> i * FRAME_SIZE;  <span class="cm">/* physical address */</span>
+        }
+    }
+    <span class="kw">return</span> <span class="num">0</span>;  <span class="cm">/* OOM */</span>
+}
+<span class="kw">void</span> <span class="fn">pmm_free_frame</span>(<span class="tp">uint32_t</span> phys) {
+    <span class="fn">bitmap_clear</span>(phys/FRAME_SIZE); free_frames++;
+}</pre>
+            <div class="ib tip">
+                <h4>meminfo shell command verification</h4>
+                <p>Add <code>meminfo</code> to the shell: call <code>pmm_free_frames()</code> and <code>pmm_total_frames()</code>, print usage in KB. Expected output for a 32 MB QEMU VM: <em>Free: ~30456 KB · Used: ~1736 KB · Total: 32768 KB</em>.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="ext-box">
+        <div class="ext-box-head">Extension Ideas — Stage 3 (bonus marks)</div>
+        <div class="ext-box-body">
+            <ul class="alist">
+                <li>Buddy allocator — power-of-two block splitting to reduce fragmentation</li>
+                <li>Virtual memory manager — software page table + <code>#PF</code> handler for demand paging</li>
+                <li>Slab allocator — <code>kmalloc(n)</code> / <code>kfree(p)</code> for variable-size kernel heap objects</li>
+                <li>Clock-algorithm page replacement when all frames are exhausted</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PANEL: STAGE 4
+══════════════════════════════════════════════════ -->
+<div class="panel" id="panel-stage4">
+    <div class="stage-div">
+        <div class="stage-div-num">4</div>
+        <div class="stage-div-content">
+            <h2>RAM Disk File System</h2>
+            <p>Lecture 12 · Stallings Ch. 11–12 · New: ramdisk.h/c, fs.h/c</p>
+        </div>
+        <span class="stage-div-badge sb-s4">Stage 4</span>
+    </div>
+
+    <div class="card">
+        <div class="card-header">① RAM disk layout — 1 MB, 5 regions</div>
+        <div class="card-body">
+            <table class="tbl">
+                <thead><tr><th>Region</th><th>Offset</th><th>Size</th><th>Contents</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Superblock</strong></td><td><code>0x000</code></td><td>512 B</td><td>Magic, block/inode counts, region offsets</td></tr>
+                    <tr><td><strong>Inode bitmap</strong></td><td><code>0x200</code></td><td>512 B</td><td>1 bit per inode</td></tr>
+                    <tr><td><strong>Block bitmap</strong></td><td><code>0x400</code></td><td>512 B</td><td>1 bit per data block</td></tr>
+                    <tr><td><strong>Inode table</strong></td><td><code>0x600</code></td><td>256 KB</td><td>1024 × 256-byte inodes</td></tr>
+                    <tr><td><strong>Data blocks</strong></td><td><code>0x40600</code></td><td>~767 KB</td><td>512-byte blocks for file data</td></tr>
+                </tbody>
+            </table>
+            <pre class="cb"><span class="pp">#define</span> FS_MAGIC     <span class="num">0x21213F5</span>  <span class="cm">/* SENG21213 */</span>
+<span class="pp">#define</span> BLOCK_SIZE   <span class="num">512</span>
+<span class="pp">#define</span> MAX_INODES   <span class="num">1024</span>
+<span class="pp">#define</span> INODE_DIRECT <span class="num">8</span>         <span class="cm">/* 8 direct block pointers = 4 KB max file */</span>
+
+<span class="kw">typedef struct</span> {
+    <span class="tp">uint32_t</span> size;
+    <span class="tp">uint32_t</span> blocks[INODE_DIRECT];
+    <span class="tp">uint32_t</span> block_count;
+    <span class="tp">uint8_t</span>  type;              <span class="cm">/* 0=free 1=file 2=dir */</span>
+    <span class="tp">char</span>     name[<span class="num">28</span>];
+} <span class="tp">inode_t</span>;</pre>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">② POSIX-style API</div>
+        <div class="card-body">
+            <pre class="cb"><span class="kw">void</span>  <span class="fn">fs_init</span>   (<span class="kw">void</span>);
+<span class="tp">int</span>   <span class="fn">fs_open</span>  (<span class="kw">const char</span> *name, <span class="tp">int</span> flags); <span class="cm">/* returns fd or -1 */</span>
+<span class="tp">int</span>   <span class="fn">fs_read</span>  (<span class="tp">int</span> fd, <span class="kw">void</span> *buf, <span class="tp">int</span> n);
+<span class="tp">int</span>   <span class="fn">fs_write</span> (<span class="tp">int</span> fd, <span class="kw">const void</span> *buf, <span class="tp">int</span> n);
+<span class="kw">void</span>  <span class="fn">fs_close</span> (<span class="tp">int</span> fd);
+<span class="tp">int</span>   <span class="fn">fs_unlink</span>(<span class="kw">const char</span> *name);
+<span class="tp">int</span>   <span class="fn">fs_ls</span>    (<span class="tp">inode_t</span> *out, <span class="tp">int</span> max);
+
+<span class="cm">/* Flags */</span>
+<span class="pp">#define</span> O_RDONLY  <span class="num">0x01</span>
+<span class="pp">#define</span> O_WRONLY  <span class="num">0x02</span>
+<span class="pp">#define</span> O_CREAT   <span class="num">0x04</span>
+<span class="pp">#define</span> O_TRUNC   <span class="num">0x08</span></pre>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">③ Verification sequence — test at the shell</div>
+        <div class="card-body">
+            <pre class="cb"><span class="pr">kernel&gt;</span> <span class="cmd">ls</span>
+0 file(s)
+
+<span class="pr">kernel&gt;</span> <span class="cmd">touch readme</span>
+OK
+
+<span class="pr">kernel&gt;</span> <span class="cmd">write readme Hello from Stage 4</span>
+OK
+
+<span class="pr">kernel&gt;</span> <span class="cmd">cat readme</span>
+Hello from Stage 4
+
+<span class="pr">kernel&gt;</span> <span class="cmd">ls</span>
+readme                      20
+1 file(s)
+
+<span class="pr">kernel&gt;</span> <span class="cmd">rm readme</span>
+OK
+
+<span class="pr">kernel&gt;</span> <span class="cmd">ls</span>
+0 file(s)</pre>
+            <div class="ib tip">
+                <h4>All six commands must work correctly</h4>
+                <p>Run this exact sequence at submission. A screen recording or <code>make run</code> output pasted into the README is acceptable evidence.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="ext-box">
+        <div class="ext-box-head">Extension Ideas — Stage 4 (bonus marks)</div>
+        <div class="ext-box-body">
+            <ul class="alist">
+                <li>Single-indirect block pointer — expand max file from 4 KB to ~4 MB</li>
+                <li>Subdirectories — <code>mkdir / cd / pwd</code> with per-process current-dir in PCB</li>
+                <li>Write-ahead journaling (8 KB log) — FS survives a simulated crash + replay on remount</li>
+                <li>VFS abstraction layer — <code>file_ops_t</code> vtable shared by RAM disk FS and a ROM read-only FS</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Resources -->
+    <div class="sec-head" style="margin-top:2rem">
+        <p class="sec-label">References</p>
+        <h2 class="sec-title">Resources</h2>
+    </div>
+    <div class="grid2">
+        <div class="concept-card">
+            <h4>Stallings COA 10th Ed.</h4>
+            <p>Primary textbook. Chs. 2, 3, 4, 5, 8, 11, 12 are the most relevant for this assignment.</p>
+        </div>
+        <div class="concept-card">
+            <h4><a href="https://osdev.org" target="_blank">OSDev Wiki</a></h4>
+            <p>Comprehensive reference for x86 low-level programming: GDT, IDT, PIC, PIT, VGA, PS/2.</p>
+        </div>
+        <div class="concept-card">
+            <h4><a href="https://nasm.us/doc/" target="_blank">NASM Manual</a></h4>
+            <p>Official NASM documentation — directives, macros, flat binary output format.</p>
+        </div>
+        <div class="concept-card">
+            <h4><a href="https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html" target="_blank">Intel SDM</a></h4>
+            <p>The definitive x86 reference. Vol. 3A covers protected mode, GDT, IDT, and interrupts.</p>
+        </div>
+    </div>
+</div>
+
+
+        </div><!-- /content-area -->
+        <footer>
+            <p>SENG 21213 · Computer Architecture &amp; Operating Systems</p>
+            <p>University of Kelaniya · Eng. Dr. Tiroshan Madushanka</p>
+            <div class="footer-links">
+                <a href="index.html">Course Home</a>
+                <a href="SENG21213_OS_Stage0.tar.gz">Starter Kit</a>
+                <a href="https://osdev.org" target="_blank">OSDev Wiki</a>
+                <a href="https://nasm.us/doc/" target="_blank">NASM Docs</a>
+                <a href="https://tiroshanm.github.io/">Portfolio</a>
+            </div>
+        </footer>
+    </div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+    /* ── Scroll bar ── */
+    window.addEventListener('scroll', () => {
+        const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight) * 100;
+        document.getElementById('scrollBar').style.width = pct + '%';
+        document.getElementById('topnav').classList.toggle('scrolled', window.scrollY > 40);
+    });
+
+    /* ── Panel switching ── */
+    const panels   = document.querySelectorAll('.panel');
+    const sbBtns   = document.querySelectorAll('.sb-btn');
+    const navTabs  = document.querySelectorAll('.nav-tab');
+
+    // Group map: nav-tab data-group → list of panel ids it covers
+    const groupMap = {
+        guide:  ['overview','toolchain','structure','build','debugging','shell-cmds','submission'],
+        stage0: ['stage0'],
+        stage1: ['stage1'],
+        stage2: ['stage2'],
+        stage3: ['stage3'],
+        stage4: ['stage4'],
+    };
+
+    function goPanel(id) {
+        // Hide all panels
+        panels.forEach(p => p.classList.remove('active'));
+        sbBtns.forEach(b => b.classList.remove('active'));
+        navTabs.forEach(t => t.classList.remove('active'));
+
+        // Show target panel
+        const target = document.getElementById('panel-' + id);
+        if (target) target.classList.add('active');
+
+        // Highlight sidebar button
+        const sbBtn = document.querySelector(`.sb-btn[data-panel="${id}"]`);
+        if (sbBtn) sbBtn.classList.add('active');
+
+        // Highlight nav tab
+        for (const [group, ids] of Object.entries(groupMap)) {
+            if (ids.includes(id)) {
+                const tab = document.querySelector(`.nav-tab[data-group="${group}"]`);
+                if (tab) tab.classList.add('active');
+                break;
+            }
+        }
+
+        // Scroll to top of content
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Sidebar buttons
+    sbBtns.forEach(btn => {
+        btn.addEventListener('click', () => goPanel(btn.dataset.panel));
+    });
+
+    // Nav tabs
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const ids = groupMap[tab.dataset.group];
+            if (ids && ids.length > 0) goPanel(ids[0]);
+        });
+    });
+
+    // Expose globally for btn-group buttons
+    window.goPanel = goPanel;
+
+    /* ── Tab bars within panels ── */
+    document.querySelectorAll('.tab-bar').forEach(bar => {
+        bar.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.tab;
+                // Deactivate siblings in same bar
+                bar.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // Find parent panel and toggle panes
+                const panel = bar.closest('.panel') || document.body;
+                panel.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.classList.toggle('active', pane.id === target);
+                });
+            });
+        });
+    });
+</script>
+</body>
+</html>
