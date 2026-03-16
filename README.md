@@ -3,6 +3,12 @@
 **University of Kelaniya · Department of Software Engineering**  
 **Eng. Dr. Tiroshan Madushanka**
 
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-8b7355?style=flat-square&logo=github)](https://software-engineering-teaching-unit.github.io/SENG21213-OS-Stage0/)
+[![Course Home](https://img.shields.io/badge/course-SENG%2021213-4a4a4a?style=flat-square)](https://tiroshanm.github.io/SENG-21213/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+
+> **📖 Full documentation:** [software-engineering-teaching-unit.github.io/SENG21213-OS-Stage0](https://software-engineering-teaching-unit.github.io/SENG21213-OS-Stage0/)
+
 ---
 
 ## Overview
@@ -64,9 +70,8 @@ sudo apt install nasm gcc qemu-system-i386 make gdb
 For the recommended cross-compiler (avoids `-m32` host issues):
 
 ```bash
-# Download and build i686-elf-gcc — see https://wiki.osdev.org/GCC_Cross-Compiler
-# Or use the prebuilt packages:
 sudo apt install gcc-multilib   # Enables -m32 on host gcc
+# Or build i686-elf-gcc: https://wiki.osdev.org/GCC_Cross-Compiler
 ```
 
 ### macOS (Homebrew)
@@ -87,8 +92,6 @@ make
 
 # Run in QEMU
 make run
-# or:
-./run.sh
 
 # Clean and rebuild
 make clean && make
@@ -103,8 +106,6 @@ Open **two terminals**:
 **Terminal 1 — start QEMU paused:**
 ```bash
 make debug
-# or:
-./run.sh debug
 ```
 
 **Terminal 2 — attach GDB:**
@@ -112,21 +113,15 @@ make debug
 make gdb
 ```
 
-This will:
-1. Load the kernel ELF (with debug symbols)
-2. Connect to QEMU on `localhost:1234`
-3. Set a breakpoint at `kernel_main`
-4. Continue execution (QEMU unpauses)
-
-Useful GDB commands inside the kernel:
+Useful GDB commands:
 ```
-(gdb) break vga_puts           # Break before printing
-(gdb) break shell_run          # Break when shell starts
-(gdb) info registers           # Inspect CPU registers
-(gdb) x/10xw 0xB8000           # Inspect VGA buffer
-(gdb) x/10xw 0x90000           # Inspect kernel stack
-(gdb) stepi                    # Single-step one instruction
-(gdb) layout asm               # Show disassembly pane
+(gdb) break kernel_main      # Break at kernel entry
+(gdb) break vga_puts         # Break before printing
+(gdb) info registers         # Inspect CPU registers
+(gdb) x/10xw 0xB8000         # Inspect VGA buffer
+(gdb) x/10xw 0x90000         # Inspect kernel stack
+(gdb) stepi                  # Single-step one instruction
+(gdb) layout asm             # Show disassembly pane
 ```
 
 ---
@@ -152,7 +147,6 @@ Add new commands to the `commands[]` table in `kernel/shell.c`.
 ### Stage 1 — Scheduler
 - Add `ps` command (list processes)
 - Files to create: `kernel/process.c`, `kernel/scheduler.c`, `boot/switch.asm`
-- See commented stubs in `kernel/kernel.c` and `include/shell.h`
 
 ### Stage 2 — Threads & Mutex
 - Add thread creation from the shell
@@ -188,32 +182,35 @@ Add new commands to the `commands[]` table in `kernel/shell.c`.
 
 ## Submission
 
-Tag your Stage 0 release in GitLab:
+Create a **private** repository on your personal GitHub account and tag each stage:
 
 ```bash
-git add .
-git commit -m "Stage 0: Boot, VGA, keyboard, shell"
-git tag v0.1-stage0
-git push origin main --tags
+git tag v0.1-stage0 && git push origin --tags
+git tag v0.2-stage1 && git push origin --tags
+git tag v0.3-stage2 && git push origin --tags
+git tag v0.4-stage3 && git push origin --tags
+git tag v0.5-stage4 && git push origin --tags
 ```
 
-Marking criteria:
+Add `tiroshanm` as a collaborator for review.
+
+### Marking criteria — Stage 0
 - [ ] Boots in QEMU without crashing
 - [ ] VGA driver displays text correctly
 - [ ] Keyboard input is correctly echoed
 - [ ] `help`, `clear`, `echo`, `version`, `halt` all work
 - [ ] Code is well-commented with Stallings lecture references
-- [ ] At least one extension from the list in the Stage 0 blog article
+- [ ] At least one extension from the Stage 0 article implemented
 
 ---
 
 ## References
 
 - Stallings, W. *Computer Organization and Architecture*, 10th Ed.
-- OSDev Wiki: https://wiki.osdev.org
-- Intel® 64 and IA-32 Architectures SDM: https://www.intel.com/sdm
+- OSDev Wiki: https://osdev.org
+- Intel® SDM: https://www.intel.com/sdm
 - NASM Manual: https://nasm.us/doc/
-- QEMU documentation: https://www.qemu.org/docs/
+- QEMU Docs: https://www.qemu.org/docs/
 
 ---
 
